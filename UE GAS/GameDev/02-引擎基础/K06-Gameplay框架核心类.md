@@ -27,6 +27,9 @@ UE 一局游戏不是"一个类管到底"，而是引擎在你进入关卡时，
 
 > 本单元配套总纲：`00-项目目录地图.md`。本单元是**第一个真正新增玩法类的单元**（K04/K05 是理论块）。
 
+> ✅ **技术债已给出修正（K09）**：K09 将 `DefaultPawnClass` 由基类 `AGameDevPawn` 改为具体玩家类 `AGameDevPlayerCharacter`（**K09 代码待落地**）。仍保留"蓝图 Class Defaults / 数据资产（PawnData）"作为**后续非阻塞的工业优化项**。
+> 原记录：K06 为快速跑通骨架，曾在 C++ 构造函数写死 `DefaultPawnClass = AGameDevPawn`（基类兜底）；工业目标是配置交蓝图/数据资产，C++ 只留安全默认值。
+
 ## 1. 为什么需要它
 - **场景**：你今天要做"俯视角 ARPG 进关卡能有一个可控角色"。这件事拆开是五问：
   1. 进入关卡时，谁来**决定出生点、决定用哪个角色类**？→ GameMode。
@@ -153,6 +156,7 @@ graph TD
 ```
 
 - **GameMode 的"三个默认类"属性**：`DefaultPawnClass`、`PlayerControllerClass`、`PlayerStateClass`、`GameStateClass`。GameMode 构造时把它们指向我们的类，引擎就会用它们来创建对应对象。
+  - **`DefaultPawnClass` 是"发哪具身体"的接线**：它应当指向**玩家真正使用的最具体的 Pawn 类**。本单元里具体玩家类还没创建（K09 才做俯视角角色），所以暂时指向基类 `AGameDevPawn` 兜底；**K09 完成后要改成具体玩家类**（`AMyPlayerCharacter`），或用蓝图子类 `BP_GameDevGameMode` 指定，避免 C++ 里写死。
 - **GameMode 只在服务端**：图上 GameMode 只从 World 直连且标注"仅服务端"。客户端永远拿不到它。
 - **Controller ↔ Pawn ↔ PlayerState 三者挂钩**：一个 Controller possess 一个 Pawn，同时关联一个 PlayerState。这是 UE 网络模型的固定三角关系。
 
@@ -220,9 +224,10 @@ sequenceDiagram
   ```
 - **对应 UE 源码位置**：`Engine/Source/Runtime/Engine/Private/GameModeBase.cpp`（非必读）。
 - **常见坑**：
-  1. `StaticClass()` 需要 `#include` 对应类的头文件，否则编译不过。
-  2. 这些赋值只是"默认值"，蓝图子类可在 Class Defaults 里覆盖；所以要保证 C++ 默认也正确。
-  3. **不要在构造函数里 `GetWorld()`**——此时 World 可能还没准备好（K07 会讲生命周期）。
+  1. `StaticClass()` 需要 `#include` 对应类的头文件，否则编译不过。**跨子目录按模块根写前缀**：工程已在 `GameDev.Build.cs` 里 `PublicIncludePaths.Add(ModuleDirectory)`，所以从 `Framework/` 引 `Character/` 的头统一写 `#include "Character/GameDevPawn.h"`；同目录（都在 `Framework/`）直接用文件名（编译器/IDE 会先搜当前文件所在目录）。这样 IDE(IntelliSense) 与 UBT 编译路径一致。
+  2. `DefaultPawnClass` 本单元暂时指向**基类** `AGameDevPawn`——因为真正的"玩家角色类"要等 K09 创建（带相机/移动）。**已在 K09 完成替换**：改为具体玩家类 `AGameDevPlayerCharacter`（见 K09 §8.3）。用基类兜底不是"妥协 hack"，而是"临时默认值"，但必须替换，不能当终态。详见第 6.1 节。
+  3. 这些赋值只是"默认值"，蓝图子类可在 Class Defaults 里覆盖；所以要保证 C++ 默认也正确。
+  4. **不要在构造函数里 `GetWorld()`**——此时 World 可能还没准备好（K07 会讲生命周期）。
 
 ### 7.2 `AGameDevGameMode::InitGame(...)`
 - **签名**：`virtual void AGameDevGameMode::InitGame(const FString& MapName, const FString& Options, FString& ErrorMessage) override;`
@@ -334,10 +339,12 @@ public:
 ```cpp
 // 【保存到 Source/GameDev/Framework/GameDevGameMode.cpp】
 #include "GameDevGameMode.h"
-#include "GameDevPawn.h"                  // 为了 DefaultPawnClass
-#include "GameDevPlayerController.h"      // 为了 PlayerControllerClass
-#include "GameDevGameState.h"             // 为了 GameStateClass
-#include "GameDevPlayerState.h"           // 为了 PlayerStateClass
+// 跨子目录 include：Build.cs 已把「模块根目录」加入 include 根，
+// 统一写成 "子目录/头文件.h" 即可（IDE 与 UBT 路径一致）。
+#include "Character/GameDevPawn.h"           // 为了 DefaultPawnClass
+#include "GameDevPlayerController.h"         // 同目录（Framework）直接用文件名
+#include "GameDevGameState.h"                // 同目录（Framework）直接用文件名
+#include "Character/GameDevPlayerState.h"    // 为了 PlayerStateClass
 
 AGameDevGameMode::AGameDevGameMode()
 {
@@ -562,6 +569,7 @@ GlobalDefaultGameMode=/Script/GameDev.GameDevGameMode
 | 进关卡没有我们的 Pawn/Controller | `GlobalDefaultGameMode` 没配，或地图 override 了别的 GameMode | 确认 ini 行存在；World Settings 里 `GameMode Override` 设为 None |
 | 客户端拿到 GameMode 为 null 后崩溃 | 在客户端调 `GetAuthGameMode` | 客户端改用 `GetGameState`；GameMode 逻辑加 `HasAuthority()` 判断 |
 | 编译报找不到 `ModularGameMode.h` | 依赖/插件名不符或未登记 | 确认 `Build.cs` 有 `ModularGameplayActors`（已有），且插件在 `.uproject` 启用（见 PLUGINS.md） |
+| 编译/IDE 报找不到 `GameDevPawn.h` / `GameDevPlayerState.h` | 跨子目录 include 前缀不符 | 统一写 `#include "Character/GameDevPawn.h"`（`Build.cs` 已加 `ModuleDirectory` 到 include 根）；改完若 IDE 仍报旧错，重新生成工程文件/重启编辑器 |
 | 报 `GENERATED_BODY` 相关错误 | 漏写/位置错/文件名≠类名 | 见 K05 §10；确保 `Xxx.generated.h` 最后 include |
 | 输入没反应 | K06 尚未实现输入（占位） | 属预期；K08 才实现 Enhanced Input |
 | `SetupInputComponent` 后官方调试命令失效 | 忘了 `Super::SetupInputComponent()` | 加上父类调用 |

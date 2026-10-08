@@ -13,6 +13,12 @@
 4. [ ] 每个里程碑（D4/D8/D14/D20/D24/D30）在 UE 工程中实际跑通对应功能后再勾学习状态。
 5. [ ] 联机（M04）在学习到 D9 前不做，先单机跑通。
 
+## 技术债跟踪（工业目标待补，禁止积压到后期批量重写）
+
+> 规则：凡"能解耦却先用简化写法"的地方，必须在此登记并写明工业目标；能当场按工业实现的，不允许留债。
+
+- [x] K09 消除 K06 临时默认：`AGameDevGameMode` 的 `DefaultPawnClass` 由基类 `AGameDevPawn` 改为具体玩家类 `AGameDevPlayerCharacter`（K09 已给出修正，**代码待落地**）。后续工业优化（非阻塞）：蓝图子类 `BP_GameDevGameMode` 的 Class Defaults 指定，再升级为数据资产（PawnData）驱动。来源：K06 §0。
+
 ## M01 总览
 - [x] K01 整体技术架构 ｜ 前置：无 ｜ 设计点：全局
 - [x] K02 客户端与服务端职责划分 ｜ 前置：K01 ｜ 设计点：①
@@ -22,10 +28,10 @@
 - [x] K04 C++ 类与 UObject 体系 ｜ 前置：K03
 - [x] K05 反射宏 UPROPERTY/UFUNCTION/UCLASS ｜ 前置：K04
 - [x] K06 Gameplay 框架核心类（GameMode/GameState/PlayerController/Pawn）｜ 前置：K04
-- [ ] K07 Actor 与 Component 生命周期 ｜ 前置：K04
-- [ ] K08 Enhanced Input 输入系统 ｜ 前置：K06 ｜ 设计点：①
-- [ ] K09 俯视角相机与角色（SpringArm/Camera）｜ 前置：K07 ｜ 设计点：①
-- [ ] K10 鼠标点击移动与 NavMesh 寻路 ｜ 前置：K08,K09 ｜ 设计点：①
+- [x] K07 Actor 与 Component 生命周期 ｜ 前置：K04
+- [x] K08 Enhanced Input 输入系统 ｜ 前置：K06 ｜ 设计点：①
+- [x] K09 俯视角相机与角色（SpringArm/Camera）｜ 前置：K07 ｜ 设计点：①
+- [x] K10 鼠标点击移动与 NavMesh 寻路 ｜ 前置：K08,K09 ｜ 设计点：①
 
 ## M03 GAS 基础
 - [ ] K11 GAS 总览与 AbilitySystemComponent ｜ 前置：K06

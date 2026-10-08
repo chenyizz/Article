@@ -16,10 +16,10 @@ last_updated: 2026-10-08
 | D2 | K04 C++ 类与 UObject 体系 | M02 | [x] | [x] | 2026-10-07 |
 | D2 | K05 反射宏 UPROPERTY/UFUNCTION/UCLASS | M02 | [x] | [ ] | 2026-10-08 |
 | D3 | K06 Gameplay 框架核心类 | M02 | [x] | [ ] | 2026-10-08 |
-| D3 | K07 Actor 与 Component 生命周期 | M02 | [ ] | [ ] | |
-| D3 | K08 Enhanced Input 输入系统 | M02 | [ ] | [ ] | |
-| D4 | K09 俯视角相机与角色 | M02 | [ ] | [ ] | |
-| D4 | K10 鼠标点击移动与 NavMesh 寻路 | M02 | [ ] | [ ] | |
+| D3 | K07 Actor 与 Component 生命周期 | M02 | [x] | [ ] | 2026-10-08 |
+| D3 | K08 Enhanced Input 输入系统 | M02 | [x] | [ ] | 2026-10-08 |
+| D4 | K09 俯视角相机与角色 | M02 | [x] | [ ] | 2026-10-08 |
+| D4 | K10 鼠标点击移动与 NavMesh 寻路 | M02 | [x] | [ ] | 2026-10-08 |
 | D5 | K11 GAS 总览与 AbilitySystemComponent | M03 | [ ] | [ ] | |
 | D5 | K12 AttributeSet 属性集 | M03 | [ ] | [ ] | |
 | D6 | K13 GameplayAbility 技能 | M03 | [ ] | [ ] | |
@@ -77,12 +77,13 @@ last_updated: 2026-10-08
 
 ## recent
 
-- 2026-10-05 初始化项目结构：建立 13 个模块目录，写入 00-导航.md、TODO.md（64 单元清单）、本排期表；未生成单元正文。
-- 2026-10-05 更新 AGENTS.md 项目规则（UE 5.7.4/技术基准），修正模板版本号；生成 K01、K02，回填 00-导航.md 链接与每日流程。
-- 2026-10-05 新增「00-项目目录地图.md」（物理位置总纲）；模板升级为 0~13 节并新增「物理落位」；AGENTS 要求术语幼教化+精确路径+回写地图；重写 K01、K02（补物理落位与零基础解释）。
-- 2026-10-07 权限加固：`opencode.jsonc` 增加 external_directory/read/glob/grep/bash 对引擎目录的 deny；两个 AGENTS.md 增加「禁止访问引擎目录」「禁止自造轮子」；新建 `_state/PLUGINS.md`（含待接入表）。按 K01 落地 Source 代码（FGameDevModule / UGameDevAssetManager / UGameDevGameInstance / Build.cs 依赖 / DefaultEngine.ini 注册），`.uproject` 插件片段交用户手动；补充 K01/K02 插件与配置说明。
 - 2026-10-07 用户安装全部 Lyra 插件（GameplayMessageRouter/ModularGameplayActors/CommonGame/CommonUser）并启用；修订 K01/K02（插件已安装状态）；`Build.cs` 补 4 模块注释；`PLUGINS.md` 移入已启用、待接入表清空；生成 K03 项目结构与模块依赖，回填导航/TODO。
 - 2026-10-07 建立工业级模块体系：模板 §4 升级为「物理模块(DLL)↔逻辑层↔具体文件」三维表；AGENTS 加生成规则 5.5；`00-项目目录地图.md` 增「物理模块规划(DLL)」（GameDevCore 契约层 + GameDev 玩法层 + GameDevEditor）；K03 整篇重写；K01/K02 §4 回溯三维；UE 工程建 `Source/GameDevCore/` 骨架并登记两个 `.Target.cs`；`.uproject` 的 `Modules` 段片段交用户手动添加。
 - 2026-10-07 K03 已学完（学习状态 [x]）；生成 K04 C++ 类与 UObject 体系（纯文档），回填导航/TODO。
 - 2026-10-08 K04 已学完（学习状态 [x]）；生成 K05 反射宏 UPROPERTY/UFUNCTION/UCLASS（纯文档，不新建文件），回填导航/TODO。
 - 2026-10-08 生成 K06 Gameplay 框架核心类：新增 AGameDevGameMode/GameState/PlayerController（Framework）与 AGameDevPawn/PlayerState（Character，新建 Character/ 目录），继承 ModularGameplayActors 模块化基类；config 增 GlobalDefaultGameMode；同步更新 00-项目目录地图.md 第 2 节、导航、TODO。
+- 2026-10-08 K06 代码落地 UE 工程：写入 10 个源文件（Framework×6 + Character×4，均含逐行中文注释），`Config/DefaultEngine.ini` 增 `GlobalDefaultGameMode`；查明本工程 include 根为项目 `Source`（`GameDev.vcxproj` 的 `IncludePath=..\..\Source`），跨子目录 include 修正为 `"GameDev/Character/Xxx.h"`；待用户在编辑器编译验证。
+- 2026-10-08 统一 include 根：`GameDev.Build.cs`/`GameDevCore.Build.cs` 加 `PublicIncludePaths.Add(ModuleDirectory)`，K06 跨子目录 include 改回惯用 `"Character/Xxx.h"`，消除 IDE(IntelliSense) 与 UBT 路径不一致（改后需重新生成工程文件）；K06 笔记登记 DefaultPawnClass 临时默认=技术债，TODO 新增「技术债跟踪」区。
+- 2026-10-08 生成 K07 Actor 与 Component 生命周期（纯文档，不新建文件），明确规定组件一律走官方 ModularGameplay、不建占位组件；回填导航/TODO。
+- 2026-10-08 生成 K08 Enhanced Input 输入系统：新增 `UGameDevInputConfig`（IA→GameplayTag，物理模块 GameDev/输入层，新建 Input/ 子目录）；**架构修订：输入绑定从 Pawn 改到 `AGameDevPlayerController`（避免与 K09 的 Character（ACharacter）分支冲突），并落地代码（`Input/GameDevInputConfig` + 控制器绑定；输入处理器带 `FInputActionValue` 以支持轴输入）**；更新目录地图第 1、2 节、导航、TODO。
+- 2026-10-08 生成 K09 俯视角相机与角色（`AGameDevPlayerCharacter : AModularCharacter` + SpringArm/Camera，GameMode `DefaultPawnClass` 改为它，**消除 K06 技术债**）与 K10 鼠标点击移动与 NavMesh 寻路（PlayerController + `UPathFollowingComponent` + `SimpleMoveToLocation`，不新建文件）；回填导航/目录地图/TODO。
